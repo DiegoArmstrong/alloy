@@ -11,8 +11,8 @@ projects, and more.
 ### Rust is cool
 
 The first and primary reason is that I have wanted to become fluent with Rust 
-for a very long time. A static site generator MVP is a simple enough project 
-to get me started before creating more complex things in the future.
+for a very long time. I found that a static site generator MVP is a simple enough 
+project to at least get started before creating more complex things in the future.
 
 ### Simple Website Building
 
