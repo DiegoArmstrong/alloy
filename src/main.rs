@@ -1,7 +1,7 @@
 mod config;
 mod content_manager;
 
-use crate::config::SysPathConfig;
+use crate::config::system_file_paths::SysPathConfig;
 use std::path::PathBuf;
 
 fn main() {
