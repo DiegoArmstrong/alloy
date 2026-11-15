@@ -24,7 +24,6 @@ fn main() {
         Err(e) => {
             eprintln!("Photos failed to copy: {e:?}");
         }
-
     }
 
     // Render the blog posts.
