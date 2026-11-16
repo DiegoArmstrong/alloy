@@ -39,7 +39,6 @@ fn html_file_end() -> String {
 
 /// Renders a new HTML file given markdown input.
 pub fn render_file(md_path: &Path, html_path: &Path) -> Result<()> {
-
     // Read Markdown file
     let markdown_bytes: Vec<u8> = fs::read(md_path)?;
     let markdown_string =
@@ -88,13 +87,11 @@ pub fn render_content(md_path: &Path, content_path: &Path) -> Result<()> {
 
 /// Copy the photos from obsidian to the deployed site path
 pub fn copy_photos(from: &Path, to: &Path) -> io::Result<()> {
-
     if !to.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!("Destination directory does not exist: {:?}", to),
         ));
-        
     }
 
     for entry in fs::read_dir(from)? {
@@ -111,5 +108,4 @@ pub fn copy_photos(from: &Path, to: &Path) -> io::Result<()> {
     }
 
     Ok(())
-
 }
