@@ -100,7 +100,7 @@ pub fn render_content(page_type: PageType, md_path: &Path, content_path: &Path) 
 }
 
 /// Rewrite relative links (what pulldown_cmark emits for Obsidian [[wikilinks]])
-/// so `href="blog-post-example"` becomes `href="publish/blog-post-example.html"`.
+/// so `href="blog-post-example"` becomes `href="blogs/blog-post-example.html"`.
 fn fix_post_links(html: &str) -> Result<String> {
     rewrite_str(
         html,
@@ -116,7 +116,7 @@ fn fix_post_links(html: &str) -> Result<String> {
                 || href.ends_with(".html");
 
             if !skip {
-                el.set_attribute("href", &format!("publish/{href}.html"))?;
+                el.set_attribute("href", &format!("blogs/{href}.html"))?;
             }
             Ok(())
         })),
