@@ -35,7 +35,7 @@ fn html_file_starter() -> String {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" href="/favicon.png" /
+    <link rel="icon" href="/favicon.png" />
 </head>
 <body>
 "#
@@ -58,10 +58,13 @@ pub fn render_file(page_type: &PageType, md_path: &Path, html_path: &Path) -> Re
     let mut html_body = String::new();
     pulldown_cmark::html::push_html(&mut html_body, parser);
 
-    // The home page links to blog posts via [[wikilinks]]; point them at publish/<post>.html
+    // The home page links to blog posts via [[wikilinks]]; point them at blogs/<post>.html
     if let PageType::HomePage = page_type {
         html_body = fix_post_links(&html_body)?;
     }
+
+    // Every page: point Obsidian ![[image.png|width]] embeds at /pictures/
+    html_body = fix_image_srcs(&html_body)?;
 
     // Compose final HTML
     let mut final_html = String::new();
@@ -124,6 +127,38 @@ fn fix_post_links(html: &str) -> Result<String> {
     .map_err(|_| ParserError::RewriteFailure)
 }
 
+/// Rewrite relative image paths (what pulldown_cmark emits for Obsidian ![[embeds]])
+/// to the site-wide `/pictures/` dir, so they resolve from any page depth
+/// (e.g. `docs/blogs/post.html`). Obsidian's `|354` width syntax ends up as the
+/// `alt` text, so a purely numeric alt is turned into a `width` attribute.
+fn fix_image_srcs(html: &str) -> Result<String> {
+    rewrite_str(
+        html,
+        RewriteStrSettings::new().append_element_content_handler(element!("img[src]", |el| {
+            let src = el.get_attribute("src").unwrap_or_default();
+
+            let skip = src.is_empty()
+                || src.contains("://")
+                || src.starts_with("data:")
+                || src.starts_with('/');
+
+            if !skip {
+                let file = src.strip_prefix("pictures/").unwrap_or(&src);
+                el.set_attribute("src", &format!("/pictures/{file}"))?;
+            }
+
+            if let Some(alt) = el.get_attribute("alt") {
+                if !alt.is_empty() && alt.chars().all(|c| c.is_ascii_digit()) {
+                    el.set_attribute("width", &alt)?;
+                    el.set_attribute("alt", "")?;
+                }
+            }
+            Ok(())
+        })),
+    )
+    .map_err(|_| ParserError::RewriteFailure)
+}
+
 /// Copy the photos from obsidian to the deployed site path
 pub fn copy_photos(from: &Path, to: &Path) -> io::Result<()> {
     if !to.exists() {
@@ -163,13 +198,28 @@ mod tests {
     fn wikilinks_point_to_published_html() {
         let out = render("[[blog-post-example]] and [[Save the Children - Marvin Gaye]]");
         assert!(
-            out.contains(r#"href="publish/blog-post-example.html""#),
+            out.contains(r#"href="blogs/blog-post-example.html""#),
             "{out}"
         );
         assert!(
-            out.contains(r#"href="publish/Save%20the%20Children%20-%20Marvin%20Gaye.html""#),
+            out.contains(r#"href="blogs/Save%20the%20Children%20-%20Marvin%20Gaye.html""#),
             "{out}"
         );
+    }
+
+    #[test]
+    fn obsidian_image_embeds_point_to_pictures() {
+        let mut html = String::new();
+        let md = "![[junior-senior don't talk.png|354]] ![x](pictures/a.JPG) ![y](/pictures/b.png)";
+        pulldown_cmark::html::push_html(&mut html, Parser::new_ext(md, Options::all()));
+        let out = fix_image_srcs(&html).unwrap();
+        assert!(
+            out.contains(r#"src="/pictures/junior-senior%20don&#x27;t%20talk.png""#),
+            "{out}"
+        );
+        assert!(out.contains(r#"width="354""#), "{out}");
+        assert!(out.contains(r#"src="/pictures/a.JPG""#), "{out}");
+        assert!(out.contains(r#"src="/pictures/b.png""#), "{out}");
     }
 
     #[test]
