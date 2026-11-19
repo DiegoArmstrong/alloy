@@ -2,6 +2,7 @@ mod config;
 mod content_manager;
 
 use crate::config::system_file_paths::SysPathConfig;
+use crate::content_manager::PageType;
 use std::path::PathBuf;
 
 fn main() {
@@ -28,6 +29,7 @@ fn main() {
 
     // Render the blog posts.
     match content_manager::render_content(
+        PageType::BlogPost,
         &blogs_to_publish_path_source,
         &blogs_to_publish_path_output,
     ) {
@@ -40,7 +42,11 @@ fn main() {
     }
 
     // Render the main page.
-    match content_manager::render_content(&home_page_path_source, &home_page_path_output) {
+    match content_manager::render_content(
+        PageType::HomePage,
+        &home_page_path_source,
+        &home_page_path_output,
+    ) {
         Ok(()) => {
             println!("Main Page rendered.");
         }
